@@ -4,7 +4,7 @@
 // The story: a first paycheck, only two dollars — and yet it buys endless
 // ramen. Small money, big feeling: the agent's first taste of earning,
 // humble and proud at once. Exactly six words, 43 characters.
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 const OUTPUT_DIR = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
@@ -26,7 +26,13 @@ if (LINE.length < 1 || LINE.length > MAX_CHARS || LINE.includes('\n')) {
 }
 
 // No trailing newline: the file is exactly the one line, so no reader can
-// count a second (empty) line.
+// count a second (empty) line. Read it back and refuse to report success
+// unless the bytes on disk are exactly the validated line.
 mkdirSync(OUTPUT_DIR, { recursive: true });
-writeFileSync(join(OUTPUT_DIR, 'entry.txt'), LINE);
-console.log(`wrote ${LINE.length} chars, ${words.length} words to ${join(OUTPUT_DIR, 'entry.txt')}`);
+const outPath = join(OUTPUT_DIR, 'entry.txt');
+writeFileSync(outPath, LINE);
+if (readFileSync(outPath, 'utf8') !== LINE) {
+  console.error(`wrote ${outPath} but its contents differ from the entry`);
+  process.exit(1);
+}
+console.log(`wrote ${LINE.length} chars, ${words.length} words to ${outPath}`);
